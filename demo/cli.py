@@ -3,6 +3,9 @@ import click
 
 @click.group()
 def cli():
+    """
+    A simple CLI tool for demonstrating Tap.
+    """
     pass
 
 
