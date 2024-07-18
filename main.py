@@ -52,21 +52,31 @@ def format_param(param) -> str:
 """
 
 
+def format_subcommand(subcommand) -> str:
+    description = subcommand.get_short_help_str(limit=80)
+    return f"- {subcommand.name}{f' - {description}' if description else ''}"
+
+
+def format_subcommands(command, context: Context) -> str:
+    subcommands = [command.get_command(context, name) for name in command.list_commands(context)]
+    return '\n'.join([format_subcommand(subcommand) for subcommand in subcommands])
+
+
 def generate_command(command, context_path: List[Context]):
-    usage = command.get_usage(get_context(command, context_path)).replace('Usage: ', '')
+    context = get_context(command, context_path)
+    usage = command.get_usage(context).replace('Usage: ', '')
     sorted_params = sort_params(command.params)
     params = ''.join([format_param(param) for param in sorted_params])
     is_group = hasattr(command, 'commands')
     template = group_template if is_group else command_template
-    subcommands = '\n'.join([f'- {cmd}' for cmd in command.commands.keys()]) if is_group else None
 
     with open(f'{OUTPUT_PATH}/{command.name}.md', 'w') as f:
         f.write(
             template.format(
                 title=command.name,
-                description=command.help.strip(),
+                description=command.help.strip() if command.help else '',
                 cli_usage=usage,
-                subcommands=subcommands,
+                subcommands=format_subcommands(command, context) if is_group else None,
                 options=params if params else "This command has no options."
             )
         )
