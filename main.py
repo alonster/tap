@@ -1,11 +1,11 @@
 import demo.cli
 from typing import List
-from click import Context
+from click import Context, Option
 
 
 OUTPUT_PATH = './docs-output'
 
-base_template = """
+base_template = """\
 # {title}
 
 {description}
@@ -38,9 +38,24 @@ def get_context(command, context_path: List[Context]) -> Context:
     return Context(command, info_name=command.name, parent=parent)
 
 
+def sort_params(params: list) -> list:
+    params = sorted(params, key=lambda p: str(type(p)))
+    return sorted(params, key=lambda p: p.required, reverse=True)
+
+
+def format_param(param) -> str:
+    is_option = type(param) is Option
+    return f"""\
+- `{param.opts[0]}`{f' - {param.help}' if is_option else ''}
+  - {'required' if param.required else f'default - `{param.default}`' if is_option else 'optional'}
+  - type - `{str(param.type).lower()}`
+"""
+
+
 def generate_command(command, context_path: List[Context]):
     usage = command.get_usage(get_context(command, context_path)).replace('Usage: ', '')
-    params = '\n'.join([f'- {param.name}' for param in command.params])
+    sorted_params = sort_params(command.params)
+    params = ''.join([format_param(param) for param in sorted_params])
     is_group = hasattr(command, 'commands')
     template = group_template if is_group else command_template
     subcommands = '\n'.join([f'- {cmd}' for cmd in command.commands.keys()]) if is_group else None
