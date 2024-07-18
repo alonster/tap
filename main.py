@@ -5,7 +5,7 @@ from click import Context
 
 OUTPUT_PATH = './docs-output'
 
-command_template = """
+base_template = """
 # {title}
 
 {description}
@@ -15,11 +15,22 @@ command_template = """
 ```
 {cli_usage}
 ```
+"""
 
+subcommands_template = """
+## Subcommands
+
+{subcommands}
+"""
+
+options_template = """
 ## Options and Flags
 
 {options}
 """
+
+command_template = base_template + options_template
+group_template = base_template + subcommands_template + options_template
 
 
 def get_context(command, context_path: List[Context]) -> Context:
@@ -29,14 +40,19 @@ def get_context(command, context_path: List[Context]) -> Context:
 
 def generate_command(command, context_path: List[Context]):
     usage = command.get_usage(get_context(command, context_path)).replace('Usage: ', '')
-    params = '\n'.join([f' - {param.name}' for param in command.params])
+    params = '\n'.join([f'- {param.name}' for param in command.params])
+    is_group = hasattr(command, 'commands')
+    template = group_template if is_group else command_template
+    subcommands = '\n'.join([f'- {cmd}' for cmd in command.commands.keys()]) if is_group else None
+
     with open(f'{OUTPUT_PATH}/{command.name}.md', 'w') as f:
         f.write(
-            command_template.format(
+            template.format(
                 title=command.name,
                 description=command.help.strip(),
                 cli_usage=usage,
-                options=params
+                subcommands=subcommands,
+                options=params if params else "This command has no options."
             )
         )
 
