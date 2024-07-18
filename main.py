@@ -1,4 +1,5 @@
 import demo.cli
+from typing import List
 from click import Context
 
 
@@ -21,28 +22,30 @@ command_template = """
 """
 
 
-def generate_command(command, context_path: list[Context]):
+def get_context(command, context_path: List[Context]) -> Context:
     parent = context_path[-1] if context_path else None
-    context = Context(command, info_name=command.name, parent=parent)
+    return Context(command, info_name=command.name, parent=parent)
+
+
+def generate_command(command, context_path: List[Context]):
+    usage = command.get_usage(get_context(command, context_path)).replace('Usage: ', '')
     params = '\n'.join([f' - {param.name}' for param in command.params])
     with open(f'{OUTPUT_PATH}/{command.name}.md', 'w') as f:
         f.write(
             command_template.format(
                 title=command.name,
-                description=command.help,
-                cli_usage=command.get_usage(context),
+                description=command.help.strip(),
+                cli_usage=usage,
                 options=params
             )
         )
 
 
-def generate_recursive(command, context_path: list[Context]):
-    parent = context_path[-1] if context_path else None
-    context = Context(command, info_name=command.name, parent=parent)
+def generate_recursive(command, context_path: List[Context]):
     generate_command(command, context_path)
     if hasattr(command, 'commands'):
         for sub_name, sub_command in command.commands.items():
-            generate_recursive(sub_command, context_path + [context])
+            generate_recursive(sub_command, context_path + [get_context(command, context_path)])
 
 
 def main():
