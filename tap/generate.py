@@ -1,9 +1,7 @@
-from tap.demo.cli import cli as demo_cli
 from typing import List
+from pathlib import Path
 from click import Context, Option
 
-
-OUTPUT_PATH = './docs-output'
 
 base_template = """\
 # {title}
@@ -62,7 +60,7 @@ def format_subcommands(command, context: Context) -> str:
     return '\n'.join([format_subcommand(subcommand) for subcommand in subcommands])
 
 
-def generate_command(command, context_path: List[Context]):
+def generate_command(command, output_dir: Path, context_path: List[Context]):
     context = get_context(command, context_path)
     usage = command.get_usage(context).replace('Usage: ', '')
     sorted_params = sort_params(command.params)
@@ -70,7 +68,7 @@ def generate_command(command, context_path: List[Context]):
     is_group = hasattr(command, 'commands')
     template = group_template if is_group else command_template
 
-    with open(f'{OUTPUT_PATH}/{command.name}.md', 'w') as f:
+    with open(output_dir.joinpath(f'{command.name}.md'), 'w') as f:
         f.write(
             template.format(
                 title=command.name,
@@ -82,18 +80,9 @@ def generate_command(command, context_path: List[Context]):
         )
 
 
-def generate_recursive(command, context_path: List[Context]):
-    generate_command(command, context_path)
+def generate_recursive(command, output_dir: Path, context_path: List[Context]):
+    output_dir.mkdir(parents=True, exist_ok=True)
+    generate_command(command, output_dir, context_path)
     if hasattr(command, 'commands'):
         for sub_name, sub_command in command.commands.items():
-            generate_recursive(sub_command, context_path + [get_context(command, context_path)])
-
-
-def main():
-    # User defined - can be defaulted to 'cli'
-    cli_super = demo_cli
-    return generate_recursive(cli_super, [])
-
-
-if __name__ == '__main__':
-    main()
+            generate_recursive(sub_command, output_dir, context_path + [get_context(command, context_path)])

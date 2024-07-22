@@ -29,7 +29,7 @@ setup(
     url=URL,
     py_modules=['tap'],
     entry_points={
-        'console_scripts': ['tap=tap:tap'],
+        'console_scripts': ['tap=tap:generate.main'],
     },
     install_requires=REQUIRES,
     include_package_data=True,
