@@ -1,2 +1,4 @@
 .idea/
 docs-output/
+build/
+tap.egg-info/

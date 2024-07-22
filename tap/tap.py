@@ -1,4 +1,4 @@
-import demo.cli
+from tap.demo.cli import cli as demo_cli
 from typing import List
 from click import Context, Option
 
@@ -91,7 +91,7 @@ def generate_recursive(command, context_path: List[Context]):
 
 def main():
     # User defined - can be defaulted to 'cli'
-    cli_super = demo.cli.cli
+    cli_super = demo_cli
     return generate_recursive(cli_super, [])
 
 
